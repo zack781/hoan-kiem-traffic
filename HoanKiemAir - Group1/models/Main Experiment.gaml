@@ -35,7 +35,11 @@ global {
 	geometry shape <- envelope(buildings_shape_file);
 	int cars <- 500;
 	int motos <- 1000;
-	int perEV<-0;
+	int buses <- 100;
+	int bicycles <- 50;
+	int perEV<-100;
+	int carPerEv<-0;
+	int busPerEv<-0;
 	int close_road <- 0;
 
 	init {
@@ -56,17 +60,36 @@ global {
 		do update_road_scenario(0);
 		do update_car_population(cars);
 		do update_motorbike_population(motos);
+		do update_bus_population(200);
+		do update_bicycle_population(500);
 	}
 
 
-	action update_EV_population (int percent) {
+	action update_motos_EV_population (int percent) {
 		ask motorbike{
 			is_ev<-false;
 		}
 		ask (percent/100*length(motorbike)) among motorbike{
 			is_ev<-true;
 		}
-
+	}
+	
+	action update_cars_EV_population (int percent) {
+		ask car{
+			is_ev<-false;
+		}
+		ask (percent/100*length(car)) among car{
+			is_ev<-true;
+		}
+	}
+	
+	action update_buses_EV_population (int percent) {
+		ask bus{
+			is_ev<-false;
+		}
+		ask (percent/100*length(bus)) among bus{
+			is_ev<-true;
+		}
 	}
 	
 	action update_motorbike_population (int new_number) {
@@ -95,6 +118,30 @@ global {
 			create car number: -delta;
 		}
 
+	}
+	
+	action update_bus_population (int new_number) {
+		int delta <- length(bus) - new_number;
+		if (delta > 0) {
+			ask delta among bus {
+				do unregister;
+				do die;
+			}
+		} else if (delta < 0) {
+			create bus number: -delta;
+		}
+	}
+	
+	action update_bicycle_population (int new_number) {
+		int delta <- length(bicycle) - new_number;
+		if (delta > 0) {
+			ask delta among bicycle {
+				do unregister;
+				do die;
+			}
+		} else if (delta < 0) {
+			create bicycle number: -delta;
+		}
 	}
 
 	action update_road_scenario (int scenario) {
@@ -161,13 +208,36 @@ experiment "Run me" autorun: true {
 		}
 
 	}
-
+	
+	parameter "Bus" category: "Param" var: buses slider: true min: 0 max: 2000 {
+		ask world {
+			do update_bus_population(buses);
+		}
+	}
+	
+	parameter "Bicycle" category: "Param" var: bicycles slider: true min: 0 max: 500 {
+		ask world {
+			do update_bicycle_population(bicycles);
+		}
+	}
 
 	parameter "% of Electrical Motobike" category: "Param" var: perEV slider: true min: 0 max: 100 {
 		ask world {
-			do update_EV_population(perEV);
+			do update_motos_EV_population(perEV);
 		}
 
+	}
+	
+	parameter "% of Electrical Car" category: "Param" var: carPerEv slider: true min:0 max: 100 {
+		ask world {
+			do update_cars_EV_population(carPerEv);
+		}
+	}
+	
+	parameter "% of Electrical Bus" category: "Param" var: busPerEv slider: true min:0 max: 100 {
+		ask world {
+			do update_buses_EV_population(carPerEv);
+		}
 	}
 
 	parameter "Closed Road" category: "Param" var: close_road slider: true min: 0 max: 2 {
@@ -189,7 +259,7 @@ experiment "Run me" autorun: true {
 					match "Motorbike" {
 						vehicle_color <- color_moto;
 					}
-					match "Cycling" {
+					match "Bicycle" {
 						vehicle_color <- color_bicycle;
 					}
 					match "Bus" {
@@ -198,18 +268,19 @@ experiment "Run me" autorun: true {
 					default {
 						vehicle_color <- color_car;
 					}
-					
 				}
 				
+				string lane_num <- string(self.current_lane);
 				
 				draw rectangle(vehicle_length * 5, lane_width * num_lanes_occupied * 50) at: shift_pt color: vehicle_color rotate: self.heading;
+				draw lane_num at: shift_pt color: #black font: font('Default', 2, #bold);
 			}
 
 			species building {
 				draw self.shape color: type = OUT ? color_outer_building : (color_inner_building);
 			}
 
-			// mesh cell triangulation: true transparency: 0.4 smooth: 3 above: 5 color: pal position: {0, 0, 0.01} visible: true;
+			mesh cell triangulation: true transparency: 0.4 smooth: 3 above: 5 color: pal position: {0, 0, 0.01} visible: true;
 		}
 
 	}

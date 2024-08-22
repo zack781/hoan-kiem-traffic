@@ -47,77 +47,14 @@ species road skills: [road_skill] {
 	}
 }
 
-species vehicle skills: [driving] {
-	string type;
-	building target;
-	point shift_pt <- location;
-	bool at_home <- true;
-	int lane_index <- 0;
-	
-	init {
-		proba_respect_priorities <- 0.0;
-		proba_respect_stops <- [1.0];
-		proba_use_linked_road <- 0.0;
-		lane_change_limit <- 2;
-		linked_lane_limit <- 0;
-		location <- one_of(building).location;
-	}
-
-	action select_target_path {
-		target <- one_of(building);
-		location <- (intersection closest_to self).location;
-		do compute_path graph: road_network target: target.closest_intersection;
-	}
-	
-	reflex choose_path when: final_target = nil {
-		do select_target_path;
-	}
-	
-	reflex move when: final_target != nil {
-		// Determine the lane the vehicle is occupying
-		lane_index <- get_lane_index();
-
-		// Only move if the vehicle is allowed in the current lane
-		if (road(current_road).can_enter_lane(lane_index, self)) {
-			do drive;
-			if (final_target = nil) {
-				do unregister;
-				at_home <- true;
-				location <- target.location;
-			} else {
-				shift_pt <- compute_position();
-			}
-		}
-	}
-
-	// Determine which lane the vehicle is occupying
-	int get_lane_index {
-		if (current_road != nil) {
-			return road(current_road).num_lanes - lowest_lane;
-		} else {
-			return 0;
-		}
-	}
-	
-	point compute_position {
-		if (current_road != nil) {
-			float dist <- (road(current_road).num_lanes - lowest_lane -
-				mean(range(num_lanes_occupied - 1)) - 0.5) * lane_width;
-			if (violating_oneway) {
-				dist <- -dist;
-			}
-			return location + {cos(heading + 90) * dist / 10, sin(heading + 90) * dist / 10};
-		} else {
-			return {0, 0};
-		}
-	}
-}
 
 species car parent: vehicle {
 	float vehicle_length <- 4.5; 
 	int num_lanes_occupied <- 2;
 	float max_speed <-rnd(50,70) #km / #h;
 	string type <- "Car";
+	list<int> allowed_lanes <- [0, 1, 2];
+	int current_lane <- one_of(allowed_lanes);
 }
 
 species motorbike parent: vehicle {
@@ -132,6 +69,18 @@ species cycling parent: vehicle {
 	int num_lanes_occupied <- 1;
 	float max_speed <-rnd(15,25) #km / #h;
 	string type <- "Cycling";
+	list<int> allowed_lanes <- [0, 1, 2];
+	int current_lane <- one_of(allowed_lanes);
+}
+
+species bicycle parent: vehicle {
+	float vehicle_length <- 1.8; 
+	int num_lanes_occupied <- 1;
+	float max_speed <-rnd(15,25) #km / #h;
+	string type <- "Bicycle";
+	list<int> allowed_lanes <- [3];
+	int current_lane <- one_of(allowed_lanes);
+	bool is_ev <- true;
 }
 
 species bus parent: vehicle {
@@ -139,6 +88,8 @@ species bus parent: vehicle {
 	int num_lanes_occupied <- 3;
 	float max_speed <-rnd(30,50) #km / #h;
 	string type <- "Bus";
+	list<int> allowed_lanes <- [0, 1, 2];
+	int current_lane <- one_of(allowed_lanes);
 }
 
 species vehicle skills:[driving] {
@@ -197,37 +148,9 @@ species vehicle skills:[driving] {
 		} else {
 			return {0, 0};
 		}
-	}
+	}	
+	
 }
-
-species car parent: vehicle {
-	float vehicle_length <- 4.5; 
-	int num_lanes_occupied <- 2;
-	float max_speed <-rnd(50,70) #km / #h;
-	string type <- "Car";
-}
-
-species motorbike parent: vehicle {
-	float vehicle_length <- 2.8; 
-	int num_lanes_occupied <- 1;
-	float max_speed <-rnd(40,50) #km / #h;
-	string type <- "Motorbike";
-}
-
-species cycling parent: vehicle {
-	float vehicle_length <- 1.8; 
-	int num_lanes_occupied <- 1;
-	float max_speed <-rnd(15,25) #km / #h;
-	string type <- "Cycling";
-}
-
-species bus parent: vehicle {
-	float vehicle_length <- 10.0; 
-	int num_lanes_occupied <- 3;
-	float max_speed <-rnd(30,50) #km / #h;
-	string type <- "Bus";
-}
-
 
 species building schedules: [] {
 	intersection closest_intersection <- intersection closest_to self;
