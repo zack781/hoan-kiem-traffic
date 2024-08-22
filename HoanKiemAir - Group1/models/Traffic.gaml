@@ -197,9 +197,37 @@ species vehicle skills:[driving] {
 		} else {
 			return {0, 0};
 		}
-	}	
-	
+	}
 }
+
+species car parent: vehicle {
+	float vehicle_length <- 4.5; 
+	int num_lanes_occupied <- 2;
+	float max_speed <-rnd(50,70) #km / #h;
+	string type <- "Car";
+}
+
+species motorbike parent: vehicle {
+	float vehicle_length <- 2.8; 
+	int num_lanes_occupied <- 1;
+	float max_speed <-rnd(40,50) #km / #h;
+	string type <- "Motorbike";
+}
+
+species cycling parent: vehicle {
+	float vehicle_length <- 1.8; 
+	int num_lanes_occupied <- 1;
+	float max_speed <-rnd(15,25) #km / #h;
+	string type <- "Cycling";
+}
+
+species bus parent: vehicle {
+	float vehicle_length <- 10.0; 
+	int num_lanes_occupied <- 3;
+	float max_speed <-rnd(30,50) #km / #h;
+	string type <- "Bus";
+}
+
 
 species building schedules: [] {
 	intersection closest_intersection <- intersection closest_to self;
