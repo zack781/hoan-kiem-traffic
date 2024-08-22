@@ -18,7 +18,9 @@ global {
 	map<rgb, string>
 	legends <- [color_inner_building::"District Buildings", color_outer_building::"Outer Buildings", color_road::"Roads", color_closed::"Closed Roads", color_lake::"Rivers & lakes", color_car::"Cars", color_moto::"Motorbikes"];
 	rgb color_car <- #lightblue;
-	rgb color_moto <- #cyan;
+	rgb color_moto <- #red;
+	rgb color_bicycle <- #green;
+	rgb color_bus <- #yellow;
 	rgb color_road <- #lightgray;
 	rgb color_closed <- #mediumpurple;
 	rgb color_inner_building <- rgb(100, 100, 100);
@@ -182,14 +184,32 @@ experiment "Run me" autorun: true {
 			}
 
 			agents "Vehicles" value: (agents of_generic_species (vehicle)) where (each.current_road != nil) {
-				draw rectangle(vehicle_length * 5, lane_width * num_lanes_occupied * 50) at: shift_pt color: type = CAR ? color_car : color_moto rotate: self.heading;
+				rgb vehicle_color;
+				switch (type) {
+					match "Motorbike" {
+						vehicle_color <- color_moto;
+					}
+					match "Cycling" {
+						vehicle_color <- color_bicycle;
+					}
+					match "Bus" {
+						vehicle_color <- color_bus;
+					}
+					default {
+						vehicle_color <- color_car;
+					}
+					
+				}
+				
+				
+				draw rectangle(vehicle_length * 5, lane_width * num_lanes_occupied * 50) at: shift_pt color: vehicle_color rotate: self.heading;
 			}
 
 			species building {
 				draw self.shape color: type = OUT ? color_outer_building : (color_inner_building);
 			}
 
-			mesh cell triangulation: true transparency: 0.4 smooth: 3 above: 5 color: pal position: {0, 0, 0.01} visible: true;
+			// mesh cell triangulation: true transparency: 0.4 smooth: 3 above: 5 color: pal position: {0, 0, 0.01} visible: true;
 		}
 
 	}
